@@ -98,11 +98,12 @@ public class ClientHandler extends Thread
             // which are defined as final at the attributes sections of this class
             
             String message;
-            
+            message = "\n";
+                    
             //People Online 
             if(msg.getMessage().equals(PEOPLE_ONLINE))
             {
-                message = "People Online: \n";
+                message += "People Online: \n";
                 for(ClientHandler ct : chatserver.ChatServer.getClients()) 
                 {
                     message += ct.getUsername() + "\n";
@@ -110,10 +111,11 @@ public class ClientHandler extends Thread
                 message += "\n";
                 
                 this.commanager.writeSimpleMessage(new SimpleMessage(message));
+                return true;
             }
             
             
-            return true;
+
         } catch (IOException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
