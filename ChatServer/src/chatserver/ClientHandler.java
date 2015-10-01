@@ -1,12 +1,18 @@
 package chatserver;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import messages.ConnectionMessage;
+import messages.SimpleMessage;
 
 
 
@@ -53,39 +59,38 @@ public class ClientHandler extends Thread
 
     
     
+    
+    
+    
     @Override
     public void run() 
     {
-        BufferedReader in = null;
-        PrintWriter out = null;
-        String s;
-        
+
+ 
         try 
         {
-            // create new BufferedReader and associate it with socket's input stream
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            
             // read input from socket and process it
-            while(!(s = in.readLine()).equals("q!")) 
+            while(true) 
             {
-                synchronized(chatserver.ChatServer.getClients()) 
+                // read SimpleMessage from socket
+                SimpleMessage msg = readSimpleMessage(socket);
+                
+                synchronized(chatserver.ChatServer.getClients())
                 {
-                    
                     // send message to all clients except the one that send it
-                    for(ClientHandler ct : chatserver.ChatServer.getClients()) 
+                    for(ClientHandler ct : chatserver.ChatServer.getClients())
                     {
                         // don't send message to the client that has sent the message
-                        if(ct.getSocket() == socket) 
+                        if(ct.getSocket() == socket)
                             continue;
-
-                        // create new PrintWriter and associate it with socket's outpout stream
-                        out = new PrintWriter(ct.getSocket().getOutputStream(), true);
+                        
+                        SimpleMessage outputmsg = new SimpleMessage(username + ": " + msg.getMessage());
                         
                         // send message to all clients
-                        System.out.println(username + ": " + s);
-                        out.println(username + ": " + s);
+                        System.out.println(username + ": " + msg.getMessage());
+                        writeSimpleMessage(ct.getSocket(),outputmsg);
                     }
-                }
+                }                  
             }
         } 
         catch (IOException ex) 
@@ -96,15 +101,80 @@ public class ClientHandler extends Thread
         finally 
         {
             chatserver.ChatServer.getClients().remove(this);
-            try 
-            {
-                in.close();
-            } 
-            catch (IOException ex) 
-            {
-                Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
+        
     }
+    
+    
+    
+    
+    
+        
+    private static ConnectionMessage readConnectionMessage(Socket socket) throws IOException
+    {
+        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+                
+   
+        byte[] usernamelengthbuf = new byte[4];
+        inputStream.read(usernamelengthbuf,0,4);
+        int usernamelength = java.nio.ByteBuffer.wrap(usernamelengthbuf).getInt();
+                
+        byte[] publickeylengthbuf = new byte[4];
+        inputStream.read(publickeylengthbuf,0,4);
+        int publickeylength = java.nio.ByteBuffer.wrap(publickeylengthbuf).getInt();
+                
+        byte[] usernamebuf = new byte[usernamelength];
+        inputStream.read(usernamebuf,0,usernamelength);
+        String username = new String(usernamebuf, "US-ASCII");
+                
+        byte[] publickeybuf = new byte[publickeylength];
+        inputStream.read(publickeybuf,0,publickeylength);
+                
+        return new ConnectionMessage(username,publickeybuf);
+    }
+    
+    private static void writeConnectionMessage(Socket socket,ConnectionMessage msg) throws IOException
+    {
+        // pack ConnectionMessage to byte array
+        byte[] bytes = msg.toByteArray();
+
+        // write bytes to socket
+        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+        outputStream.write(bytes);
+        outputStream.flush();
+    }
+      
+    private static SimpleMessage readSimpleMessage(Socket socket) throws IOException
+    {
+        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+                
+   
+        byte[] messagelengthbuf = new byte[4];
+        inputStream.read(messagelengthbuf,0,4);
+        int messagelength = java.nio.ByteBuffer.wrap(messagelengthbuf).getInt();
+  
+        byte[] messagebuf = new byte[messagelength];
+        inputStream.read(messagebuf,0,messagelength);
+        String message = new String(messagebuf, "US-ASCII");
+
+        return new SimpleMessage(message);
+    }
+    
+    private static void writeSimpleMessage(Socket socket,SimpleMessage msg) throws IOException
+    {
+        // pack ConnectionMessage to byte array
+        byte[] bytes = msg.toByteArray();
+
+        // write bytes to socket
+        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+        outputStream.write(bytes);
+        outputStream.flush();
+    }
+    
+    
+    
+    
+    
+    
     
 }
