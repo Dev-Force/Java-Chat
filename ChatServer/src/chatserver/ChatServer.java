@@ -113,25 +113,38 @@ public class ChatServer
     
     private static ConnectionMessage readConnectionMessage(Socket socket) throws IOException
     {
-        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-                
-   
-        byte[] usernamelengthbuf = new byte[4];
-        inputStream.read(usernamelengthbuf,0,4);
-        int usernamelength = java.nio.ByteBuffer.wrap(usernamelengthbuf).getInt();
-                
-        byte[] publickeylengthbuf = new byte[4];
-        inputStream.read(publickeylengthbuf,0,4);
-        int publickeylength = java.nio.ByteBuffer.wrap(publickeylengthbuf).getInt();
-                
-        byte[] usernamebuf = new byte[usernamelength];
-        inputStream.read(usernamebuf,0,usernamelength);
-        String username = new String(usernamebuf, "US-ASCII");
-                
-        byte[] publickeybuf = new byte[publickeylength];
-        inputStream.read(publickeybuf,0,publickeylength);
-                
-        return new ConnectionMessage(username,publickeybuf);
+        try {
+            //        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+//   
+//
+//        byte[] usernamelengthbuf = new byte[4];
+//        inputStream.read(usernamelengthbuf,0,4);
+//        int usernamelength = java.nio.ByteBuffer.wrap(usernamelengthbuf).getInt();
+//                
+//        byte[] publickeylengthbuf = new byte[4];
+//        inputStream.read(publickeylengthbuf,0,4);
+//        int publickeylength = java.nio.ByteBuffer.wrap(publickeylengthbuf).getInt();
+//                
+//        byte[] usernamebuf = new byte[usernamelength];
+//        inputStream.read(usernamebuf,0,usernamelength);
+//        String username = new String(usernamebuf, "US-ASCII");
+//                
+//        byte[] publickeybuf = new byte[publickeylength];
+//        inputStream.read(publickeybuf,0,publickeylength);
+//                
+//        return new ConnectionMessage(username,publickeybuf);
+            
+            
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            ConnectionMessage o = (ConnectionMessage) ois.readObject();
+            System.out.println(o.getClass().getName());
+            System.out.println(o.getPublicKey());
+            System.out.println(o.getUsername());
+            
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(ChatServer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
     
     private static void writeConnectionMessage(Socket socket,ConnectionMessage msg) throws IOException

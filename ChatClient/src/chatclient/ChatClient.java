@@ -128,6 +128,7 @@ public class ChatClient extends Thread
         
         ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
         oos.writeObject(msg);
+        oos.flush();
     }
       
     private SimpleMessage readSimpleMessage(Socket socket) throws IOException
