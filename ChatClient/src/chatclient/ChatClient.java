@@ -4,6 +4,7 @@ import encryption.EncryptionManager;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.util.Scanner;
@@ -117,13 +118,16 @@ public class ChatClient extends Thread
     
     private void writeConnectionMessage(Socket socket,ConnectionMessage msg) throws IOException
     {
-        // pack ConnectionMessage to byte array
-        byte[] bytes = msg.toByteArray();
-
-        // write bytes to socket
-        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
-        outputStream.write(bytes);
-        outputStream.flush();
+//        // pack ConnectionMessage to byte array
+//        byte[] bytes = msg.toByteArray();
+//
+//        // write bytes to socket
+//        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+//        outputStream.write(bytes);
+//        outputStream.flush();
+        
+        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+        oos.writeObject(msg);
     }
       
     private SimpleMessage readSimpleMessage(Socket socket) throws IOException

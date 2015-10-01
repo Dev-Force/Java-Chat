@@ -6,7 +6,7 @@ import java.nio.charset.Charset;
 
 
 
-public class ConnectionMessage implements Serializable
+public class ConnectionMessage
 {
     private String username;
     private byte[] publickey;

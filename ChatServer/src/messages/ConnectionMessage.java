@@ -1,12 +1,15 @@
 package messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 
 
-public class ConnectionMessage implements Serializable
+public class ConnectionMessage
 {
     private String username;
     private byte[] publickey;
@@ -17,6 +20,35 @@ public class ConnectionMessage implements Serializable
     {
         this.username = username;
         this.publickey = publickey;
+    }
+    
+    
+    private ConnectionMessage readConnectionMessage(Socket socket) throws IOException, ClassNotFoundException
+    {
+//        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+//                
+//   
+//        byte[] usernamelengthbuf = new byte[4];
+//        inputStream.read(usernamelengthbuf,0,4);
+//        int usernamelength = java.nio.ByteBuffer.wrap(usernamelengthbuf).getInt();
+//                
+//        byte[] publickeylengthbuf = new byte[4];
+//        inputStream.read(publickeylengthbuf,0,4);
+//        int publickeylength = java.nio.ByteBuffer.wrap(publickeylengthbuf).getInt();
+//                
+//        byte[] usernamebuf = new byte[usernamelength];
+//        inputStream.read(usernamebuf,0,usernamelength);
+//        String username = new String(usernamebuf, "US-ASCII");
+//                
+//        byte[] publickeybuf = new byte[publickeylength];
+//        inputStream.read(publickeybuf,0,publickeylength);
+//                
+//        return new ConnectionMessage(username,publickeybuf);
+        
+        ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+        Object o = ois.readObject();
+        System.out.println(o.getClass().getName());
+        return null;
     }
 
     
