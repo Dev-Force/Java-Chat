@@ -2,7 +2,10 @@ package chatserver;
 
 import communication.CommunicationManager;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import messages.SimpleMessage;
@@ -11,7 +14,11 @@ import messages.SimpleMessage;
 
 public class ClientHandler extends Thread
 {
-    private final String PEOPLE_ONLINE = "!online";
+    private final String[] COMMANDS = 
+    {
+        "!getOnline",
+        "!listCommands",
+    };
     
     private Socket socket;
     private String username;
@@ -99,27 +106,49 @@ public class ClientHandler extends Thread
             
             String message;
             message = "\n";
-                    
-            //People Online 
-            if(msg.getMessage().equals(PEOPLE_ONLINE))
+            
+            for (String c : COMMANDS)
             {
-                message += "People Online: \n";
-                for(ClientHandler ct : chatserver.ChatServer.getClients()) 
+                if (c.equals(msg.getMessage()))
                 {
-                    message += ct.getUsername() + "\n";
+                    //removes the '!' from the start and calls the method dynamically
+                    ClientHandler.class.getMethod(c.substring(1)).invoke(this);
+                    
+                    return true;
                 }
-                message += "\n";
-                
-                this.commanager.writeSimpleMessage(new SimpleMessage(message));
-                return true;
             }
             
-            
-
-        } catch (IOException ex) {
+        } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
         return false;
+    }
+    
+    public void getOnline() throws IOException 
+    {
+        String message = "\n";
+        message += "People Online: \n";
+        for(ClientHandler ct : chatserver.ChatServer.getClients()) 
+        {
+            message += ct.getUsername() + "\n";
+        }
+        message += "\n";
+
+        this.commanager.writeSimpleMessage(new SimpleMessage(message));
+        
+    }
+    
+    public void listCommands() throws IOException
+    {
+        String message = "\n";
+        message += "Available Commands: \n";
+        
+        for (String s : COMMANDS)
+        {
+            message += s + "\n";
+        }
+        message += "\n";
+        this.commanager.writeSimpleMessage(new SimpleMessage(message));
     }
     
     @Override
