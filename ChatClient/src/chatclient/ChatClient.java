@@ -5,12 +5,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import messages.ConnectionMessage;
 import messages.SimpleMessage;
 
