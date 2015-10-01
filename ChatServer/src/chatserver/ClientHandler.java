@@ -11,6 +11,8 @@ import messages.SimpleMessage;
 
 public class ClientHandler extends Thread
 {
+    private final String PEOPLE_ONLINE = "!online";
+    
     private Socket socket;
     private String username;
     private CommunicationManager commanager;
@@ -89,6 +91,35 @@ public class ClientHandler extends Thread
         }
     }
     
+    public boolean isCommand(SimpleMessage msg) 
+    {
+        try {
+            // in this block we add the implementations of all the commands 
+            // which are defined as final at the attributes sections of this class
+            
+            String message;
+            
+            //People Online 
+            if(msg.getMessage().equals(PEOPLE_ONLINE))
+            {
+                message = "People Online: \n";
+                for(ClientHandler ct : chatserver.ChatServer.getClients()) 
+                {
+                    message += ct.getUsername() + "\n";
+                }
+                message += "\n";
+                
+                this.commanager.writeSimpleMessage(new SimpleMessage(message));
+            }
+            
+            
+            return true;
+        } catch (IOException ex) {
+            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
+    }
+    
     @Override
     public void run() 
     {
@@ -96,13 +127,20 @@ public class ClientHandler extends Thread
  
         try 
         {
+            boolean command;
             // read input from socket and process it
             while(true) 
             {
                 // read SimpleMessage from socket
                 SimpleMessage msg = commanager.readSimpleMessage();
                 
-                this.sendToAll(msg);
+                // command handling
+                command = isCommand(msg);
+                
+                if(!command)
+                {
+                    this.sendToAll(msg);
+                }
             }
         } 
         catch (IOException ex) 
