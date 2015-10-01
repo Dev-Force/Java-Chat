@@ -45,8 +45,49 @@ public class ClientHandler extends Thread
     {
         this.username = username;
     }
+    
+    public void sendToAll(SimpleMessage msg) throws IOException
+    {
+        synchronized(chatserver.ChatServer.getClients()) 
+        {
+            if (!chatserver.ChatServer.getClients().isEmpty()) 
+            {
+                // send message to all clients except the one that send it
+                for(ClientHandler ct : chatserver.ChatServer.getClients())
+                {
+                    // don't send message to the client that has sent the message
+                    if(ct.getSocket() == socket)
+                        continue;
 
+                    SimpleMessage outputmsg = new SimpleMessage(username + ": " + msg.getMessage());
 
+                    // send message to all clients
+                    System.out.println(username + ": " + msg.getMessage());
+                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(outputmsg);
+                }
+            }
+        }
+    }
+    
+    public void logoutNotification() 
+    {
+        System.out.println("User \"" + this.username + "\" logged out" );
+        
+        if (!chatserver.ChatServer.getClients().isEmpty()) 
+        {
+            for (ClientHandler ct : chatserver.ChatServer.getClients())
+            {
+                try {
+                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(new SimpleMessage("User \"" + this.username + "\" logged out"));
+                } catch (IOException ex1) {
+                    // Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex1);
+                    if(ct.getSocket() == socket)
+                        continue;
+                    System.out.println("Couldnt send notification to : " + ct.getUsername());
+                }
+            }
+        }
+    }
     
     @Override
     public void run() 
@@ -61,31 +102,19 @@ public class ClientHandler extends Thread
                 // read SimpleMessage from socket
                 SimpleMessage msg = commanager.readSimpleMessage();
                 
-                synchronized(chatserver.ChatServer.getClients())
-                {
-                    // send message to all clients except the one that send it
-                    for(ClientHandler ct : chatserver.ChatServer.getClients())
-                    {
-                        // don't send message to the client that has sent the message
-                        if(ct.getSocket() == socket)
-                            continue;
-                        
-                        SimpleMessage outputmsg = new SimpleMessage(username + ": " + msg.getMessage());
-                        
-                        // send message to all clients
-                        System.out.println(username + ": " + msg.getMessage());
-                        (new CommunicationManager(ct.getSocket())).writeSimpleMessage(outputmsg);
-                    }
-                }                  
+                this.sendToAll(msg);
             }
         } 
         catch (IOException ex) 
         {
-            //remove ClientThread from List
-            Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
+            this.logoutNotification();
+            
+            // print the error (remove comment if you want to show it)
+            //Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);
         } 
         finally 
         {
+            //remove ClientThread from List
             chatserver.ChatServer.getClients().remove(this);
         }
         
