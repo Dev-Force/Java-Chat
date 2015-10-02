@@ -24,19 +24,18 @@ public abstract class AbstractMessage {
             Double.class,
         };
         
-        Class<?> cls;
-        Object temp;
-        for (Object o : objects) {
+        for (Object ob : objects) {
 //            System.out.println(ob.getClass().getSimpleName());
             
             for (Class c : AVAILABLE_TYPES) 
             {
-                if (o.getClass().getSimpleName().equals(c.getSimpleName())) {
-                    System.out.println(convertInstanceOfObject(o, c.getName().getClass()));
-                    toByteArray(convertInstanceOfObject(o, c.getName().getClass()) + "\n");
+                if (ob.getClass().getSimpleName().equals(c.getSimpleName())) {
+//                    System.out.println(c.getClass());
+                    System.out.println(convertInstanceOfObject(ob, c).getClass());
+                    toByteArray(convertInstanceOfObject(ob, c));
                 }
             }
-        }   
+        } 
         
                 
         return null;
