@@ -6,7 +6,7 @@ import java.nio.charset.Charset;
 
 
 
-public class SimpleMessage implements Serializable 
+public class SimpleMessage implements Serializable
 {
     private String message;
     
@@ -32,8 +32,10 @@ public class SimpleMessage implements Serializable
         byte[] usernamelengthbytes = ByteBuffer.allocate(4).putInt(usernamebytes.length).array(); 
         byte[] bytes = new byte[usernamelengthbytes.length+usernamebytes.length];
 
-        System.arraycopy(usernamelengthbytes,0,bytes,0,usernamelengthbytes.length);
-        System.arraycopy(usernamebytes,0,bytes,usernamelengthbytes.length,usernamebytes.length);
+        int offset = 0;
+        System.arraycopy(usernamelengthbytes,0,bytes,offset,usernamelengthbytes.length);
+        offset += usernamelengthbytes.length;
+        System.arraycopy(usernamebytes,0,bytes,offset,usernamebytes.length);
         
         return bytes;
     }

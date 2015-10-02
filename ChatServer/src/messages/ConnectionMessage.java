@@ -35,11 +35,15 @@ public class ConnectionMessage implements Serializable
         byte[] usernamelengthbytes = ByteBuffer.allocate(4).putInt(usernamebytes.length).array(); 
         byte[] publickeylengthbytes = ByteBuffer.allocate(4).putInt(publickeybytes.length).array(); 
         byte[] bytes = new byte[usernamelengthbytes.length+publickeylengthbytes.length+usernamebytes.length+publickeybytes.length];
-
-        System.arraycopy(usernamelengthbytes,0,bytes,0,usernamelengthbytes.length);
-        System.arraycopy(publickeylengthbytes,0,bytes,usernamelengthbytes.length,publickeylengthbytes.length);
-        System.arraycopy(usernamebytes,0,bytes,usernamelengthbytes.length+publickeylengthbytes.length,usernamebytes.length);
-        System.arraycopy(publickeybytes,0,bytes,usernamelengthbytes.length+publickeylengthbytes.length+usernamebytes.length,publickeybytes.length);
+        
+        int offset = 0;
+        System.arraycopy(usernamelengthbytes,0,bytes,offset,usernamelengthbytes.length);
+        offset += usernamelengthbytes.length;
+        System.arraycopy(publickeylengthbytes,0,bytes,offset,publickeylengthbytes.length);
+        offset += publickeylengthbytes.length;
+        System.arraycopy(usernamebytes,0,bytes,offset,usernamebytes.length);
+        offset += usernamebytes.length;
+        System.arraycopy(publickeybytes,0,bytes,offset,publickeybytes.length);
  
         return bytes;
     }
