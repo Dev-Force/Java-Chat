@@ -8,32 +8,35 @@ package messages;
  */
 public abstract class AbstractMessage {
     
+    public static <T> T convertInstanceOfObject(Object o, Class<T> clazz) {
+        try {
+            return clazz.cast(o);
+        } catch(ClassCastException e) {
+            return null;
+        }
+    }
+    
     public byte[] toByteArray(Object... objects) throws ClassNotFoundException, Exception 
     {
-        final String[] types = { 
-            "String",
-            "Integer",
-            "byte[]",
+        final Class[] AVAILABLE_TYPES = {
+            Integer.class,
+            String.class,
+            Double.class,
         };
         
-        int offset = 0;
-        int size = 0;
-        byte[] bytes;
-        Class c;
-        
-        for (Object o : objects)
-        {
-            for (String s : types) 
+        Class<?> cls;
+        Object temp;
+        for (Object o : objects) {
+//            System.out.println(ob.getClass().getSimpleName());
+            
+            for (Class c : AVAILABLE_TYPES) 
             {
-                
-                if(!s.equals(o.getClass().getSimpleName()))
-                {
-                    throw new Exception("Value " + o.getClass().getSimpleName() + " not accepted");
+                if (o.getClass().getSimpleName().equals(c.getSimpleName())) {
+                    System.out.println(convertInstanceOfObject(o, c.getName().getClass()));
+                    toByteArray(convertInstanceOfObject(o, c.getName().getClass()) + "\n");
                 }
-                
-                
             }
-        }
+        }   
         
                 
         return null;
