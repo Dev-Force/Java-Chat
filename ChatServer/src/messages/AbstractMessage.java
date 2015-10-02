@@ -2,6 +2,8 @@
  */
 package messages;
 
+import java.lang.reflect.Method;
+
 /**
  *
  * @author Tolis
@@ -32,7 +34,10 @@ public abstract class AbstractMessage {
                 if (ob.getClass().getSimpleName().equals(c.getSimpleName())) {
 //                    System.out.println(c.getClass());
                     System.out.println(convertInstanceOfObject(ob, c).getClass());
-                    toByteArray(convertInstanceOfObject(ob, c));
+//                    test(convertInstanceOfObject(ob, c) + "ffg");
+                    Method method = this.getClass().getMethod("toByteArray", new Class[] {c});
+                    System.out.println(method.invoke(this, new Object[] {convertInstanceOfObject(ob, c)}));
+                    
                 }
             }
         } 
