@@ -3,9 +3,7 @@ package chatserver;
 import communication.CommunicationManager;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import messages.SimpleMessage;
@@ -55,7 +53,7 @@ public class ClientHandler extends Thread
         this.username = username;
     }
     
-    public void sendToAll(SimpleMessage msg) throws IOException
+    private void sendToAll(SimpleMessage msg) throws IOException
     {
         synchronized(chatserver.ChatServer.getClients()) 
         {
@@ -78,7 +76,7 @@ public class ClientHandler extends Thread
         }
     }
     
-    public void logoutNotification() 
+    private void logoutNotification() 
     {
         System.out.println("User \"" + this.username + "\" logged out" );
         
@@ -98,7 +96,7 @@ public class ClientHandler extends Thread
         }
     }
     
-    public boolean isCommand(SimpleMessage msg) 
+    private boolean isCommand(SimpleMessage msg) 
     {
         try {
             // in this block we add the implementations of all the commands 
@@ -112,7 +110,7 @@ public class ClientHandler extends Thread
                 if (c.equals(msg.getMessage()))
                 {
                     //removes the '!' from the start and calls the method dynamically
-                    ClientHandler.class.getMethod(c.substring(1)).invoke(this);
+                    ClientHandler.class.getDeclaredMethod(c.substring(1)).invoke(this);
                     
                     return true;
                 }
@@ -124,7 +122,7 @@ public class ClientHandler extends Thread
         return false;
     }
     
-    public void getOnline() throws IOException 
+    private void getOnline() throws IOException 
     {
         String message = "\n";
         message += "People Online: \n";
@@ -138,7 +136,7 @@ public class ClientHandler extends Thread
         
     }
     
-    public void listCommands() throws IOException
+    private void listCommands() throws IOException
     {
         String message = "\n";
         message += "Available Commands: \n";

@@ -2,7 +2,12 @@
  */
 package messages;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /**
  *
@@ -10,56 +15,77 @@ import java.lang.reflect.Method;
  */
 public abstract class AbstractMessage {
     
-    public static <T> T convertInstanceOfObject(Object o, Class<T> clazz) {
-        try {
-            return clazz.cast(o);
-        } catch(ClassCastException e) {
-            return null;
-        }
+    final Class[] AVAILABLE_TYPES = 
+    {
+//        int.class,
+        String.class,
+        byte[].class,
+    };
+    
+    byte[] length;
+    
+    byte[] bytes;
+    
+    private final ByteArrayOutputStream baus_l = new ByteArrayOutputStream();
+    
+    private final ByteArrayOutputStream baus_b = new ByteArrayOutputStream();
+    
+    
+    private void toByteArray(String s) throws IOException 
+    {
+        // get s bytes and s bytes length
+        byte[] sBytes = s.getBytes(Charset.forName("UTF-8"));
+        byte[] sLengthBytes = ByteBuffer.allocate(4).putInt(s.length()).array();
+        
+        //add s length bytes to stream
+        baus_l.write(sLengthBytes);
+        
+        //add s bytes to stream
+        baus_b.write(sBytes);
     }
     
-    public byte[] toByteArray(Object... objects) throws ClassNotFoundException, Exception 
+    private void toByteArray(byte[] b) throws IOException
     {
-        final Class[] AVAILABLE_TYPES = {
-            Integer.class,
-            String.class,
-            Double.class,
-        };
+        baus_l.write(b.length);
+        baus_b.write(b);
+    }
+    
+    public byte[] toByteArray(Object... o) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
+        byte[] length;
+        byte[] bytes;
+        byte[] finalBytes;
         
-        for (Object ob : objects) {
-//            System.out.println(ob.getClass().getSimpleName());
-            
-            for (Class c : AVAILABLE_TYPES) 
+        for (Object ob : o) // for every object in the parameter list
+        {
+            for (Class c : AVAILABLE_TYPES) //for every defined available type
             {
-                if (ob.getClass().getSimpleName().equals(c.getSimpleName())) {
-//                    System.out.println(c.getClass());
-                    System.out.println(convertInstanceOfObject(ob, c).getClass());
-//                    test(convertInstanceOfObject(ob, c) + "ffg");
-                    Method method = this.getClass().getMethod("toByteArray", new Class[] {c});
-                    System.out.println(method.invoke(this, new Object[] {convertInstanceOfObject(ob, c)}));
+                // if classes are the same
+                if (ob.getClass().equals(c)) 
+                {
+                    // find the method and then invoke it (casted the object as any type we want)
+                    Method method = this.getClass().getDeclaredMethod("toByteArray", new Class[] {c});
+                    method.setAccessible(true);
+                    method.invoke(this, new Object[] {ob});
                     
+                    break;
                 }
             }
-        } 
+        }
         
-                
-        return null;
-    }
-    
-    public byte[] toByteArray(String s) 
-    {
-       
-        return null;
-    }
-    
-    public byte[] toByteArray(int i)
-    {
+        length = baus_l.toByteArray();
+        bytes = baus_b.toByteArray();
         
-        return null;
-    }
-    
-    public byte[] toByteArray(byte[] b)
-    {
-        return null;
+        finalBytes = new byte[length.length + bytes.length];
+        
+        //combine arrays to one!
+        System.arraycopy(length, 0, finalBytes, 0, length.length);
+        System.arraycopy(bytes, 0, finalBytes, length.length, bytes.length);
+        
+        //close streams
+        baus_l.close();
+        baus_b.close();
+        
+        return finalBytes;
+
     }
 }
