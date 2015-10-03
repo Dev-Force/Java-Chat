@@ -3,16 +3,29 @@ package communication;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import messages.ConnectionMessage;
+import messages.Message;
 import messages.SimpleMessage;
+
 
 
 
 public class CommunicationManager 
 {
-    Socket socket;
     
+    
+    private final String[] TYPES = 
+    {
+        "SimpleMessage",
+        "ConnectionMessage",
+    };
+    
+    Socket socket;
     
     
     public CommunicationManager(Socket socket)
@@ -20,9 +33,54 @@ public class CommunicationManager
         this.socket = socket;
     }
     
+    /**
+     * Generic method for handling of reading a message
+     * 
+     * @param type - The message type ex. SimpleMessage
+     * @return 
+     */
+    public Message readMessage(String type)
+    {
+        for (String c : TYPES)
+        {
+            if (c.equals(type))
+            {
+                try {
+                    Method method = CommunicationManager.class.getDeclaredMethod("read" + c);
+                    method.setAccessible(true);
+                    Message msg = (Message) method.invoke(this);
+                    return msg;
+                } 
+                catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) 
+                {
+//                    Ignore!
+//                    System.out.println(ex.getCause());
+//                    Logger.getLogger(CommunicationManager.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        
+        return null;
+    }
     
-            
-    public ConnectionMessage readConnectionMessage() throws IOException
+    //this  method is called by readMessage and reads a SimpleMessage
+    private Message readSimpleMessage() throws IOException 
+    {
+        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
+                
+   
+        byte[] messagelengthbuf = new byte[4];
+        inputStream.read(messagelengthbuf,0,4);
+        int messagelength = java.nio.ByteBuffer.wrap(messagelengthbuf).getInt();
+  
+        byte[] messagebuf = new byte[messagelength];
+        inputStream.read(messagebuf,0,messagelength);
+        String message = new String(messagebuf, "US-ASCII");
+
+        return new SimpleMessage(message);
+    }
+    
+    private Message readConnectionMessage() throws IOException
     {
         DataInputStream inputStream = new DataInputStream(socket.getInputStream());
                 
@@ -45,34 +103,7 @@ public class CommunicationManager
         return new ConnectionMessage(username,publickeybuf);
     }
     
-    public void writeConnectionMessage(ConnectionMessage msg) throws IOException
-    {
-        // pack ConnectionMessage to byte array
-        byte[] bytes = msg.toByteArray();
-
-        // write bytes to socket
-        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
-        outputStream.write(bytes);
-        outputStream.flush();
-    }
-      
-    public SimpleMessage readSimpleMessage() throws IOException
-    {
-        DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-                
-   
-        byte[] messagelengthbuf = new byte[4];
-        inputStream.read(messagelengthbuf,0,4);
-        int messagelength = java.nio.ByteBuffer.wrap(messagelengthbuf).getInt();
-  
-        byte[] messagebuf = new byte[messagelength];
-        inputStream.read(messagebuf,0,messagelength);
-        String message = new String(messagebuf, "US-ASCII");
-
-        return new SimpleMessage(message);
-    }
-    
-    public void writeSimpleMessage(SimpleMessage msg) throws IOException
+    public void writeMessage(Message msg) throws IOException
     {
         // pack ConnectionMessage to byte array
         byte[] bytes = msg.toByteArray();
@@ -92,7 +123,6 @@ public class CommunicationManager
     {
         this.socket = socket;
     }
-    
     
     
 }

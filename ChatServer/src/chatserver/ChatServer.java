@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import messages.ConnectionMessage;
+import messages.Message;
+import messages.MessageFactory;
 
 
 
@@ -92,7 +94,7 @@ public class ChatServer
             
             // read ConnectionMessage from socket
             CommunicationManager commanager = new CommunicationManager(socket);
-            ConnectionMessage connectionmsg = commanager.readConnectionMessage();
+            Message connectionmsg = commanager.readMessage("ConnectionMessage");
             String username = connectionmsg.getUsername();
             
             

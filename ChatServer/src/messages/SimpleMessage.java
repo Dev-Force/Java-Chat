@@ -5,8 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 
-
-public class SimpleMessage implements Serializable
+public class SimpleMessage extends AbstractMessage implements Serializable, Message
 {
     private String message;
     
@@ -15,29 +14,6 @@ public class SimpleMessage implements Serializable
     public SimpleMessage(String message)
     {
         this.message = message;
-    }
-    
-    
-    
-    /**
-     * 
-     * Pack this ConnectionMessage to byte array.
-     * 
-     * @param msg
-     * @return 
-     */
-    public byte[] toByteArray()
-    {
-        byte[] usernamebytes = this.getMessage().getBytes(Charset.forName("UTF-8"));
-        byte[] usernamelengthbytes = ByteBuffer.allocate(4).putInt(usernamebytes.length).array(); 
-        byte[] bytes = new byte[usernamelengthbytes.length+usernamebytes.length];
-
-        int offset = 0;
-        System.arraycopy(usernamelengthbytes,0,bytes,offset,usernamelengthbytes.length);
-        offset += usernamelengthbytes.length;
-        System.arraycopy(usernamebytes,0,bytes,offset,usernamebytes.length);
-        
-        return bytes;
     }
     
     public String getMessage()
@@ -49,5 +25,26 @@ public class SimpleMessage implements Serializable
     {
         this.message = message;
     }
+
+    @Override
+    public String getUsername() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public byte[] getPublicKey() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setUsername(String username) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setPublicKey(byte[] publickey) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     
 }

@@ -3,9 +3,12 @@ package chatserver;
 import communication.CommunicationManager;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import messages.Message;
+import messages.MessageFactory;
 import messages.SimpleMessage;
 
 
@@ -21,6 +24,7 @@ public class ClientHandler extends Thread
     private Socket socket;
     private String username;
     private CommunicationManager commanager;
+    private MessageFactory mf;
 
     
     
@@ -29,6 +33,7 @@ public class ClientHandler extends Thread
         this.socket = socket;
         this.username = username;
         this.commanager = new CommunicationManager(socket);
+        this.mf = new MessageFactory();
     }
     
     
@@ -53,8 +58,12 @@ public class ClientHandler extends Thread
         this.username = username;
     }
     
-    private void sendToAll(SimpleMessage msg) throws IOException
+    private void sendToAll(Message msg) throws IOException
     {
+        if(msg == null)
+        {
+            return;
+        }
         synchronized(chatserver.ChatServer.getClients()) 
         {
             if (!chatserver.ChatServer.getClients().isEmpty()) 
@@ -63,14 +72,15 @@ public class ClientHandler extends Thread
                 for(ClientHandler ct : chatserver.ChatServer.getClients())
                 {
                     // don't send message to the client that has sent the message
-                    if(ct.getSocket() == socket)
-                        continue;
+//                    if(ct.getSocket() == socket)
+//                        continue;
 
-                    SimpleMessage outputmsg = new SimpleMessage(username + ": " + msg.getMessage());
+//                    SimpleMessage outputmsg = new SimpleMessage(username + ": " + msg.getMessage());
+                    Message outputmsg = mf.makeSimpleMesage(username + ": " + msg.getMessage());
 
                     // send message to all clients
                     System.out.println(username + ": " + msg.getMessage());
-                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(outputmsg);
+                    (new CommunicationManager(ct.getSocket())).writeMessage(outputmsg);
                 }
             }
         }
@@ -84,19 +94,20 @@ public class ClientHandler extends Thread
         {
             for (ClientHandler ct : chatserver.ChatServer.getClients())
             {
+                if(ct.getSocket() == socket)
+                        continue;
+                
                 try {
-                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(new SimpleMessage("User \"" + this.username + "\" logged out"));
+                    (new CommunicationManager(ct.getSocket())).writeMessage(new SimpleMessage("User \"" + this.username + "\" logged out"));
                 } catch (IOException ex1) {
                     // Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex1);
-                    if(ct.getSocket() == socket)
-                        continue;
                     System.out.println("Couldnt send notification to : " + ct.getUsername());
                 }
             }
         }
     }
     
-    private boolean isCommand(SimpleMessage msg) 
+    private boolean isCommand(Message msg) 
     {
         try {
             // in this block we add the implementations of all the commands 
@@ -105,12 +116,19 @@ public class ClientHandler extends Thread
             String message;
             message = "\n";
             
+            if(msg == null) 
+            {
+                return false;
+            }
+            
             for (String c : COMMANDS)
             {
-                if (c.equals(msg.getMessage()))
+                if (c.equals( msg.getMessage()) )
                 {
                     //removes the '!' from the start and calls the method dynamically
-                    ClientHandler.class.getDeclaredMethod(c.substring(1)).invoke(this);
+                    Method method = ClientHandler.class.getDeclaredMethod(c.substring(1));
+                    method.setAccessible(true);
+                    method.invoke(this);
                     
                     return true;
                 }
@@ -132,7 +150,9 @@ public class ClientHandler extends Thread
         }
         message += "\n";
 
-        this.commanager.writeSimpleMessage(new SimpleMessage(message));
+//        this.commanager.writeMessage(new SimpleMessage(message));
+        Message msg = mf.makeSimpleMesage(message);
+        this.commanager.writeMessage(msg);
         
     }
     
@@ -146,7 +166,7 @@ public class ClientHandler extends Thread
             message += s + "\n";
         }
         message += "\n";
-        this.commanager.writeSimpleMessage(new SimpleMessage(message));
+        this.commanager.writeMessage(new SimpleMessage(message));
     }
     
     @Override
@@ -157,12 +177,14 @@ public class ClientHandler extends Thread
         try 
         {
             boolean command;
+            MessageFactory mf = new MessageFactory();
             // read input from socket and process it
             while(true) 
             {
                 // read SimpleMessage from socket
-                SimpleMessage msg = commanager.readSimpleMessage();
+                Message msg = commanager.readMessage("SimpleMessage");
                 
+//                System.out.println(msg.getMessage());
                 // command handling
                 command = isCommand(msg);
                 

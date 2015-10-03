@@ -1,5 +1,4 @@
-/*
- */
+
 package messages;
 
 import java.io.ByteArrayOutputStream;
@@ -8,6 +7,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -22,14 +23,9 @@ public abstract class AbstractMessage {
         byte[].class,
     };
     
-    byte[] length;
-    
-    byte[] bytes;
-    
     private final ByteArrayOutputStream baus_l = new ByteArrayOutputStream();
     
     private final ByteArrayOutputStream baus_b = new ByteArrayOutputStream();
-    
     
     private void toByteArray(String s) throws IOException 
     {
@@ -42,6 +38,8 @@ public abstract class AbstractMessage {
         
         //add s bytes to stream
         baus_b.write(sBytes);
+        
+        System.out.println(sBytes.length);
     }
     
     private void toByteArray(byte[] b) throws IOException
@@ -50,30 +48,39 @@ public abstract class AbstractMessage {
         baus_b.write(b);
     }
     
-    public byte[] toByteArray(Object... o) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
+    public byte[] toByteArray(Object... objects)
+    {
         byte[] length;
         byte[] bytes;
         byte[] finalBytes;
         
-        for (Object ob : o) // for every object in the parameter list
+        for (Object ob : objects) // for every object in the parameter list
         {
             for (Class c : AVAILABLE_TYPES) //for every defined available type
             {
                 // if classes are the same
                 if (ob.getClass().equals(c)) 
                 {
-                    // find the method and then invoke it (casted the object as any type we want)
-                    Method method = this.getClass().getDeclaredMethod("toByteArray", new Class[] {c});
-                    method.setAccessible(true);
-                    method.invoke(this, new Object[] {ob});
-                    
-                    break;
+                    try {
+                        // find the method and then invoke it (casted the object as any type we want)
+                        Method method = this.getClass().getDeclaredMethod("toByteArray", new Class[] {c});
+                        method.setAccessible(true);
+                        method.invoke(this, new Object[] {ob});
+                        
+                        baus_l.flush();
+                        baus_b.flush();
+                        break;
+                    } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException ex) {
+                        Logger.getLogger(AbstractMessage.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         }
         
         length = baus_l.toByteArray();
         bytes = baus_b.toByteArray();
+        
+        System.out.println(length.length);
         
         finalBytes = new byte[length.length + bytes.length];
         
@@ -82,8 +89,13 @@ public abstract class AbstractMessage {
         System.arraycopy(bytes, 0, finalBytes, length.length, bytes.length);
         
         //close streams
-        baus_l.close();
-        baus_b.close();
+        try {
+            baus_l.close();
+            baus_b.close();
+        } catch (IOException ex) {
+            Logger.getLogger(AbstractMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         
         return finalBytes;
 
