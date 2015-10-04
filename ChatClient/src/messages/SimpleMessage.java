@@ -2,17 +2,16 @@ package messages;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 
 
 
 public class SimpleMessage implements Serializable 
 {
-    private String message;
+    private byte[] message;
     
     
     
-    public SimpleMessage(String message)
+    public SimpleMessage(byte[] message)
     {
         this.message = message;
     }
@@ -21,29 +20,28 @@ public class SimpleMessage implements Serializable
     
     /**
      * 
-     * Pack this ConnectionMessage to byte array.
+     * Pack this EncryptedSimpleMessage to byte array.
      * 
-     * @param msg
      * @return 
      */
     public byte[] toByteArray()
     {
-        byte[] usernamebytes = this.getMessage().getBytes(Charset.forName("UTF-8"));
-        byte[] usernamelengthbytes = ByteBuffer.allocate(4).putInt(usernamebytes.length).array(); 
-        byte[] bytes = new byte[usernamelengthbytes.length+usernamebytes.length];
+        byte[] messagebytes = this.getMessage();
+        byte[] messagelengthbytes = ByteBuffer.allocate(4).putInt(messagebytes.length).array(); 
+        byte[] bytes = new byte[messagelengthbytes.length+messagebytes.length];
 
-        System.arraycopy(usernamelengthbytes,0,bytes,0,usernamelengthbytes.length);
-        System.arraycopy(usernamebytes,0,bytes,usernamelengthbytes.length,usernamebytes.length);
+        System.arraycopy(messagelengthbytes,0,bytes,0,messagelengthbytes.length);
+        System.arraycopy(messagebytes,0,bytes,messagelengthbytes.length,messagebytes.length);
         
         return bytes;
     }
     
-    public String getMessage()
+    public byte[] getMessage()
     {
         return message;
     }
     
-    public void setMessage(String message)
+    public void setMessage(byte[] message)
     {
         this.message = message;
     }

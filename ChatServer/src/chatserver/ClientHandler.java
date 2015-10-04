@@ -1,9 +1,12 @@
 package chatserver;
 
 import communication.CommunicationManager;
+import encryption.EncryptionManager;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import messages.SimpleMessage;
@@ -21,14 +24,20 @@ public class ClientHandler extends Thread
     private Socket socket;
     private String username;
     private CommunicationManager commanager;
+    private EncryptionManager cryptmanager;
+    private PrivateKey serverprivatekey;
+    private PublicKey clientpublickey;
 
     
     
-    public ClientHandler(Socket socket,String username) 
+    public ClientHandler(Socket socket, String username, PublicKey clientpublickey, PrivateKey serverprivatekey) 
     {
         this.socket = socket;
         this.username = username;
         this.commanager = new CommunicationManager(socket);
+        this.clientpublickey = clientpublickey;
+        this.serverprivatekey = serverprivatekey;
+        this.cryptmanager = new EncryptionManager();       
     }
     
     
@@ -53,7 +62,12 @@ public class ClientHandler extends Thread
         this.username = username;
     }
     
-    private void sendToAll(SimpleMessage msg) throws IOException
+    public PublicKey getPublicKey()
+    {
+        return clientpublickey;
+    }
+    
+    private void sendToAll(String message) throws IOException
     {
         synchronized(chatserver.ChatServer.getClients()) 
         {
@@ -66,48 +80,50 @@ public class ClientHandler extends Thread
                     if(ct.getSocket() == socket)
                         continue;
 
-                    SimpleMessage outputmsg = new SimpleMessage(username + ": " + msg.getMessage());
+                    
+                    // encrypt message using client's RSA public key
+                    byte[] msgbytes = cryptmanager.encrypt(username + ": " + message, ct.getPublicKey());
 
-                    // send message to all clients
-                    System.out.println(username + ": " + msg.getMessage());
-                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(outputmsg);
+                    // write SimpleMessage to socket
+                    SimpleMessage msg = new SimpleMessage(msgbytes);
+                    
+                    // send message to client
+                    System.out.println(username + ": " + message);
+                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(msg);
                 }
             }
         }
     }
     
-    private void logoutNotification() 
-    {
-        System.out.println("User \"" + this.username + "\" logged out" );
-        
-        if (!chatserver.ChatServer.getClients().isEmpty()) 
-        {
-            for (ClientHandler ct : chatserver.ChatServer.getClients())
-            {
-                try {
-                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(new SimpleMessage("User \"" + this.username + "\" logged out"));
-                } catch (IOException ex1) {
-                    // Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex1);
-                    if(ct.getSocket() == socket)
-                        continue;
-                    System.out.println("Couldnt send notification to : " + ct.getUsername());
-                }
-            }
-        }
-    }
+//    private void logoutNotification() 
+//    {
+//        System.out.println("User \"" + this.username + "\" logged out" );
+//        
+//        if (!chatserver.ChatServer.getClients().isEmpty()) 
+//        {
+//            for (ClientHandler ct : chatserver.ChatServer.getClients())
+//            {
+//                try {
+//                    (new CommunicationManager(ct.getSocket())).writeSimpleMessage(new SimpleMessage("User \"" + this.username + "\" logged out"));
+//                } catch (IOException ex1) {
+//                    // Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex1);
+//                    if(ct.getSocket() == socket)
+//                        continue;
+//                    System.out.println("Couldnt send notification to : " + ct.getUsername());
+//                }
+//            }
+//        }
+//    }
     
-    private boolean isCommand(SimpleMessage msg) 
+    private boolean isCommand(String message) 
     {
         try {
             // in this block we add the implementations of all the commands 
             // which are defined as final at the attributes sections of this class
             
-            String message;
-            message = "\n";
-            
             for (String c : COMMANDS)
             {
-                if (c.equals(msg.getMessage()))
+                if (c.equals(message))
                 {
                     //removes the '!' from the start and calls the method dynamically
                     ClientHandler.class.getDeclaredMethod(c.substring(1)).invoke(this);
@@ -122,32 +138,32 @@ public class ClientHandler extends Thread
         return false;
     }
     
-    private void getOnline() throws IOException 
-    {
-        String message = "\n";
-        message += "People Online: \n";
-        for(ClientHandler ct : chatserver.ChatServer.getClients()) 
-        {
-            message += ct.getUsername() + "\n";
-        }
-        message += "\n";
-
-        this.commanager.writeSimpleMessage(new SimpleMessage(message));
-        
-    }
-    
-    private void listCommands() throws IOException
-    {
-        String message = "\n";
-        message += "Available Commands: \n";
-        
-        for (String s : COMMANDS)
-        {
-            message += s + "\n";
-        }
-        message += "\n";
-        this.commanager.writeSimpleMessage(new SimpleMessage(message));
-    }
+//    private void getOnline() throws IOException 
+//    {
+//        String message = "\n";
+//        message += "People Online: \n";
+//        for(ClientHandler ct : chatserver.ChatServer.getClients()) 
+//        {
+//            message += ct.getUsername() + "\n";
+//        }
+//        message += "\n";
+//
+//        this.commanager.writeSimpleMessage(new SimpleMessage(message));
+//        
+//    }
+//    
+//    private void listCommands() throws IOException
+//    {
+//        String message = "\n";
+//        message += "Available Commands: \n";
+//        
+//        for (String s : COMMANDS)
+//        {
+//            message += s + "\n";
+//        }
+//        message += "\n";
+//        this.commanager.writeSimpleMessage(new SimpleMessage(message));
+//    }
     
     @Override
     public void run() 
@@ -161,7 +177,10 @@ public class ClientHandler extends Thread
             while(true) 
             {
                 // read SimpleMessage from socket
-                SimpleMessage msg = commanager.readSimpleMessage();
+                SimpleMessage encryptedmsg = commanager.readSimpleMessage();
+                
+                // decrypt EncryptedSimpleMessage using server's RSA private key
+                String msg = cryptmanager.decrypt(encryptedmsg.getMessage(), serverprivatekey);
                 
                 // command handling
                 command = isCommand(msg);
@@ -174,7 +193,7 @@ public class ClientHandler extends Thread
         } 
         catch (IOException ex) 
         {
-            this.logoutNotification();
+            //this.logoutNotification();
             
             // print the error (remove comment if you want to show it)
             //Logger.getLogger(ClientHandler.class.getName()).log(Level.SEVERE, null, ex);

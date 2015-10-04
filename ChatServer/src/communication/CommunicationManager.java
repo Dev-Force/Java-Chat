@@ -44,18 +44,7 @@ public class CommunicationManager
                 
         return new ConnectionMessage(username,publickeybuf);
     }
-    
-    public void writeConnectionMessage(ConnectionMessage msg) throws IOException
-    {
-        // pack ConnectionMessage to byte array
-        byte[] bytes = msg.toByteArray();
-
-        // write bytes to socket
-        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
-        outputStream.write(bytes);
-        outputStream.flush();
-    }
-      
+ 
     public SimpleMessage readSimpleMessage() throws IOException
     {
         DataInputStream inputStream = new DataInputStream(socket.getInputStream());
@@ -67,9 +56,19 @@ public class CommunicationManager
   
         byte[] messagebuf = new byte[messagelength];
         inputStream.read(messagebuf,0,messagelength);
-        String message = new String(messagebuf, "US-ASCII");
 
-        return new SimpleMessage(message);
+        return new SimpleMessage(messagebuf);
+    }
+    
+    public void writeConnectionMessage(ConnectionMessage msg) throws IOException
+    {
+        // pack ConnectionMessage to byte array
+        byte[] bytes = msg.toByteArray();
+
+        // write bytes to socket
+        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+        outputStream.write(bytes);
+        outputStream.flush();
     }
     
     public void writeSimpleMessage(SimpleMessage msg) throws IOException
@@ -82,7 +81,7 @@ public class CommunicationManager
         outputStream.write(bytes);
         outputStream.flush();
     }
-    
+   
     public Socket getSocket()
     {
         return socket;

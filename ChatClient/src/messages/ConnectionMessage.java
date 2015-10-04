@@ -25,7 +25,6 @@ public class ConnectionMessage implements Serializable
      * 
      * Pack this ConnectionMessage to byte array.
      * 
-     * @param msg
      * @return 
      */
     public byte[] toByteArray()

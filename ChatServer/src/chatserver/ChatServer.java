@@ -6,7 +6,12 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -44,12 +49,19 @@ public class ChatServer
             ip = args[0];
             port = Integer.parseInt(args[1]);
                 
-            // create new Database object
-            // if database does not exist, create it
-            //db = new Database();
-        
-            // setup connection listener
-            setupListener(ip, port);
+            try {
+                // create new Database object
+                // if database does not exist, create it
+                //db = new Database();
+                
+                // setup connection listener
+                setupListener(ip, port);
+            } catch (NoSuchAlgorithmException ex) {
+                Logger.getLogger(ChatServer.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(ChatServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
         } 
         catch (NumberFormatException e) 
         {
@@ -73,7 +85,7 @@ public class ChatServer
         ChatServer.Clients = Clients;
     }
     
-    private synchronized static void setupListener(String ip, int port) throws IOException
+    private synchronized static void setupListener(String ip, int port) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException
     {  
         // create new EncryptionManager and generate rsa keys
         cryptmanager = new EncryptionManager();
@@ -94,23 +106,16 @@ public class ChatServer
             CommunicationManager commanager = new CommunicationManager(socket);
             ConnectionMessage connectionmsg = commanager.readConnectionMessage();
             String username = connectionmsg.getUsername();
+            byte[] publickeybytes = connectionmsg.getPublicKey();
+            PublicKey publickey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(publickeybytes));
+
             
-            
-            
-            System.out.println("Username: " + username);
-            
-            
-            
-//            // write ConnectionMessage to socket
-//            connectionmsg = new ConnectionMessage("",keys.getPublic().getEncoded());
-//            commanager.writeConnectionMessage(connectionmsg);
-//            
-            
-            
-            
+            // write ConnectionMessage to socket in order to send server's RSA public key
+            connectionmsg = new ConnectionMessage("",keys.getPublic().getEncoded());
+            commanager.writeConnectionMessage(connectionmsg);
 
             // create new ClientThread to handle client connection and start thread
-            ClientHandler client = new ClientHandler(socket, username);
+            ClientHandler client = new ClientHandler(socket, username, publickey, keys.getPrivate());
             Clients.add(client);
             client.start();
         } 
