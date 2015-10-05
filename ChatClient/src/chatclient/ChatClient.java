@@ -85,7 +85,8 @@ public class ChatClient extends Thread
                     }
                     catch (IOException ex)
                     {
-                        System.out.println(ex.getStackTrace());
+                        System.out.println("There is a problem with the Server.");
+                        System.out.println("Please try again later.");
                     }
                     System.exit(0);
                 }
