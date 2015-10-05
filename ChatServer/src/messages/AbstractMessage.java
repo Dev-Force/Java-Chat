@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.TypeVariable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
@@ -23,29 +24,37 @@ public abstract class AbstractMessage {
         byte[].class,
     };
     
-    private final ByteArrayOutputStream baus_l = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream baos_l = new ByteArrayOutputStream();
     
-    private final ByteArrayOutputStream baus_b = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream baos_b = new ByteArrayOutputStream();
     
-    private void toByteArray(String s) throws IOException 
+    private void toByteArray(String s)
     {
-        // get s bytes and s bytes length
-        byte[] sBytes = s.getBytes(Charset.forName("UTF-8"));
-        byte[] sLengthBytes = ByteBuffer.allocate(4).putInt(s.length()).array();
         
-        //add s length bytes to stream
-        baus_l.write(sLengthBytes);
-        
-        //add s bytes to stream
-        baus_b.write(sBytes);
-        
-        System.out.println(sBytes.length);
+        try {
+            // get s bytes and s bytes length
+            byte[] sBytes = s.getBytes(Charset.forName("UTF-8"));
+            byte[] sLengthBytes = ByteBuffer.allocate(4).putInt(s.length()).array();
+            
+            //add s length bytes to stream
+            baos_l.write(sLengthBytes);
+            
+            //add s bytes to stream
+            baos_b.write(sBytes);
+        } catch (IOException ex) {
+            Logger.getLogger(AbstractMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
-    private void toByteArray(byte[] b) throws IOException
+    private void toByteArray(byte[] b)
     {
-        baus_l.write(b.length);
-        baus_b.write(b);
+        try {
+            byte[] l = ByteBuffer.allocate(4).putInt(b.length).array();
+            baos_l.write(l);
+            baos_b.write(b);
+        } catch (IOException ex) {
+            Logger.getLogger(AbstractMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public byte[] toByteArray(Object... objects)
@@ -62,25 +71,28 @@ public abstract class AbstractMessage {
                 if (ob.getClass().equals(c)) 
                 {
                     try {
+                        
+//                        Method[] m = this.getClass().getSuperclass().getDeclaredMethods();
+//                        for (int i = 0; i < m.length; i++)
+//                        System.out.println(m[i].toString());
+                        
                         // find the method and then invoke it (casted the object as any type we want)
-                        Method method = this.getClass().getDeclaredMethod("toByteArray", new Class[] {c});
+                        Method method = AbstractMessage.class.getDeclaredMethod("toByteArray", new Class[] {c});
                         method.setAccessible(true);
                         method.invoke(this, new Object[] {ob});
                         
-                        baus_l.flush();
-                        baus_b.flush();
+                        baos_l.flush();
+                        baos_b.flush();
                         break;
-                    } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException ex) {
+                    } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException | NoSuchMethodException ex) {
                         Logger.getLogger(AbstractMessage.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
         }
         
-        length = baus_l.toByteArray();
-        bytes = baus_b.toByteArray();
-        
-        System.out.println(length.length);
+        length = baos_l.toByteArray();
+        bytes = baos_b.toByteArray();
         
         finalBytes = new byte[length.length + bytes.length];
         
@@ -90,8 +102,8 @@ public abstract class AbstractMessage {
         
         //close streams
         try {
-            baus_l.close();
-            baus_b.close();
+            baos_l.close();
+            baos_b.close();
         } catch (IOException ex) {
             Logger.getLogger(AbstractMessage.class.getName()).log(Level.SEVERE, null, ex);
         }

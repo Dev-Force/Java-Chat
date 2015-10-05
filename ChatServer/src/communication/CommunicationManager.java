@@ -106,7 +106,7 @@ public class CommunicationManager
     public void writeMessage(Message msg) throws IOException
     {
         // pack ConnectionMessage to byte array
-        byte[] bytes = msg.toByteArray();
+        byte[] bytes = msg.toByteArray(msg.getMessage());
 
         // write bytes to socket
         DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
