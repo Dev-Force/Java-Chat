@@ -46,7 +46,8 @@ public abstract class AbstractMessage {
     
     private void toByteArray(byte[] b) throws IOException
     {
-        baus_l.write(b.length);
+        byte[] l = ByteBuffer.allocate(4).putInt(b.length).array();
+        baus_l.write(l);
         baus_b.write(b);
     }
     
@@ -63,7 +64,7 @@ public abstract class AbstractMessage {
                 if (ob.getClass().equals(c)) 
                 {
                     // find the method and then invoke it (casted the object as any type we want)
-                    Method method = this.getClass().getDeclaredMethod("toByteArray", new Class[] {c});
+                    Method method = AbstractMessage.class.getDeclaredMethod("toByteArray", new Class[] {c});
                     method.setAccessible(true);
                     method.invoke(this, new Object[] {ob});
                     
