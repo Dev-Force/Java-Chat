@@ -1,12 +1,14 @@
 package messages;
 
+import java.io.IOException;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 
-public class ConnectionMessage implements Serializable
+public class ConnectionMessage extends AbstractMessage implements Serializable
 {
     private String username;
     private byte[] publickey;
@@ -21,26 +23,16 @@ public class ConnectionMessage implements Serializable
 
     
     
-    /**
-     * 
-     * Pack this ConnectionMessage to byte array.
-     * 
-     * @return 
-     */
+
+    @Override
     public byte[] toByteArray()
     {
-        byte[] usernamebytes = this.getUsername().getBytes(Charset.forName("UTF-8"));
-        byte[] publickeybytes = this.getPublicKey();
-        byte[] usernamelengthbytes = ByteBuffer.allocate(4).putInt(usernamebytes.length).array(); 
-        byte[] publickeylengthbytes = ByteBuffer.allocate(4).putInt(publickeybytes.length).array(); 
-        byte[] bytes = new byte[usernamelengthbytes.length+publickeylengthbytes.length+usernamebytes.length+publickeybytes.length];
-
-        System.arraycopy(usernamelengthbytes,0,bytes,0,usernamelengthbytes.length);
-        System.arraycopy(publickeylengthbytes,0,bytes,usernamelengthbytes.length,publickeylengthbytes.length);
-        System.arraycopy(usernamebytes,0,bytes,usernamelengthbytes.length+publickeylengthbytes.length,usernamebytes.length);
-        System.arraycopy(publickeybytes,0,bytes,usernamelengthbytes.length+publickeylengthbytes.length+usernamebytes.length,publickeybytes.length);
- 
-        return bytes;
+        try {
+            return toByteArray(username, publickey);
+        } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException ex) {
+            Logger.getLogger(SimpleMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
     
     public String getUsername() 

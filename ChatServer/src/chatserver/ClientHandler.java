@@ -69,7 +69,7 @@ public class ClientHandler extends Thread
     
     private void sendToAll(String message) throws IOException
     {
-        synchronized(chatserver.ChatServer.getClients()) 
+        synchronized(chatserver.ChatServer.getClients())
         {
             if (!chatserver.ChatServer.getClients().isEmpty()) 
             {

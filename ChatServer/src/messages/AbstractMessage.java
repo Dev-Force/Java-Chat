@@ -31,6 +31,8 @@ public abstract class AbstractMessage {
     private final ByteArrayOutputStream baus_b = new ByteArrayOutputStream();
     
     
+    public abstract byte[] toByteArray();
+    
     private void toByteArray(String s) throws IOException 
     {
         // get s bytes and s bytes length
@@ -51,7 +53,7 @@ public abstract class AbstractMessage {
         baus_b.write(b);
     }
     
-    public byte[] toByteArray(Object... o) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
+    protected byte[] toByteArray(Object... o) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, IOException {
         byte[] length;
         byte[] bytes;
         byte[] finalBytes;

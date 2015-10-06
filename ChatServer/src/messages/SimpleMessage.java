@@ -1,11 +1,15 @@
 package messages;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 
-public class SimpleMessage implements Serializable 
+public class SimpleMessage extends AbstractMessage implements Serializable
 {
     private byte[] message;
     
@@ -16,24 +20,15 @@ public class SimpleMessage implements Serializable
         this.message = message;
     }
     
-    
-    
-    /**
-     * 
-     * Pack this EncryptedSimpleMessage to byte array.
-     * 
-     * @return 
-     */
+    @Override
     public byte[] toByteArray()
     {
-        byte[] messagebytes = this.getMessage();
-        byte[] messagelengthbytes = ByteBuffer.allocate(4).putInt(messagebytes.length).array(); 
-        byte[] bytes = new byte[messagelengthbytes.length+messagebytes.length];
-
-        System.arraycopy(messagelengthbytes,0,bytes,0,messagelengthbytes.length);
-        System.arraycopy(messagebytes,0,bytes,messagelengthbytes.length,messagebytes.length);
-        
-        return bytes;
+        try {
+            return toByteArray(message);
+        } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | IOException ex) {
+            Logger.getLogger(SimpleMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
     
     public byte[] getMessage()
